@@ -8,14 +8,29 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`include "register.sv"
-`include "edge_det.sv"
-`include "clint_define.sv"
+`include "apb4_if.svh"
+`include "clint_define.svh"
 
 module apb4_clint (
+`ifdef __VERILOG__
+    `apb4_slave_if(apb4),
+    input  clint_rtc_clk_i,
+    output clint_tmr_irq_o,
+    output clint_sfr_irq_o
+`else
     apb4_if.slave apb4,
     clint_if.dut  clint
+`endif
 );
+
+`ifndef __VERILOG__
+  `apb4_slave_if2wire(apb4, apb4);
+  logic clint_rtc_clk_i = clint.rtc_clk_i;
+  logic clint_tmr_irq_o;
+  logic clint_sfr_irq_o;
+  assign clint.tmr_irq_o = clint_tmr_irq_o;
+  assign clint.sfr_irq_o = clint_sfr_irq_o;
+`endif
 
   logic [3:0] s_apb4_addr;
   logic s_apb4_wr_hdshk, s_apb4_rd_hdshk;
@@ -27,24 +42,24 @@ module apb4_clint (
   logic s_mtimecmp_en;
   logic s_rtc_rise_edge;
 
-  assign s_apb4_addr     = apb4.paddr[5:2];
-  assign s_apb4_wr_hdshk = (apb4.psel && apb4.penable) && apb4.pwrite;
-  assign s_apb4_rd_hdshk = (apb4.psel && apb4.penable) && (~apb4.pwrite);
-  assign apb4.pready     = 1'b1;
-  assign apb4.pslverr    = 1'b0;
+  assign s_apb4_addr     = apb4_paddr[5:2];
+  assign s_apb4_wr_hdshk = (apb4_psel && apb4_penable) && apb4_pwrite;
+  assign s_apb4_rd_hdshk = (apb4_psel && apb4_penable) && (~apb4_pwrite);
+  assign apb4_pready     = 1'b1;
+  assign apb4_pslverr    = 1'b0;
 
   edge_det_re #(2, 1) u_edge_det_re (
-      .clk_i  (apb4.pclk),
-      .rst_n_i(apb4.presetn),
-      .dat_i  (clint.rtc_clk_i),
+      .clk_i  (apb4_pclk),
+      .rst_n_i(apb4_presetn),
+      .dat_i  (clint_rtc_clk_i),
       .re_o   (s_rtc_rise_edge)
   );
 
   assign s_msip_en = s_apb4_wr_hdshk && s_apb4_addr == `CLINT_MSIP;
-  assign s_msip_d  = apb4.pwdata[`CLINT_MSIP_WIDTH-1:0];
+  assign s_msip_d  = apb4_pwdata[`CLINT_MSIP_WIDTH-1:0];
   dffer #(`CLINT_MSIP_WIDTH) u_msip_dffer (
-      apb4.pclk,
-      apb4.presetn,
+      apb4_pclk,
+      apb4_presetn,
       s_msip_en,
       s_msip_d,
       s_msip_q
@@ -53,8 +68,8 @@ module apb4_clint (
   assign s_mtime_en = s_rtc_rise_edge;
   assign s_mtime_d  = s_mtime_q + 1'b1;
   dffer #(`CLINT_MTIME_WIDTH) u_mtime_dffer (
-      apb4.pclk,
-      apb4.presetn,
+      apb4_pclk,
+      apb4_presetn,
       s_mtime_en,
       s_mtime_d,
       s_mtime_q
@@ -65,33 +80,33 @@ module apb4_clint (
     s_mtimecmp_d = s_mtimecmp_q;
     if (s_apb4_wr_hdshk) begin
       unique case (s_apb4_addr)
-        `CLINT_MTIMECMPL: s_mtimecmp_d = {s_mtimecmp_q[63:32], apb4.pwdata};
-        `CLINT_MTIMECMPH: s_mtimecmp_d = {apb4.pwdata, s_mtimecmp_q[31:0]};
+        `CLINT_MTIMECMPL: s_mtimecmp_d = {s_mtimecmp_q[63:32], apb4_pwdata};
+        `CLINT_MTIMECMPH: s_mtimecmp_d = {apb4_pwdata, s_mtimecmp_q[31:0]};
         default:          s_mtimecmp_d = s_mtimecmp_q;
       endcase
     end
   end
   dfferh #(`CLINT_MTIMECMP_WIDTH) u_mtimecmp_dfferh (
-      apb4.pclk,
-      apb4.presetn,
+      apb4_pclk,
+      apb4_presetn,
       s_mtimecmp_en,
       s_mtimecmp_d,
       s_mtimecmp_q
   );
 
-  assign clint.tmr_irq_o = s_mtime_q >= s_mtimecmp_q;
-  assign clint.sfr_irq_o = s_msip_q[0];
+  assign clint_tmr_irq_o = s_mtime_q >= s_mtimecmp_q;
+  assign clint_sfr_irq_o = s_msip_q[0];
 
   always_comb begin
-    apb4.prdata = '0;
+    apb4_prdata = '0;
     if (s_apb4_rd_hdshk) begin
       unique case (s_apb4_addr)
-        `CLINT_MSIP:      apb4.prdata[`CLINT_MSIP_WIDTH-1:0] = s_msip_q;
-        `CLINT_MTIMEL:    apb4.prdata = s_mtime_q[31:0];
-        `CLINT_MTIMEH:    apb4.prdata = s_mtime_q[63:32];
-        `CLINT_MTIMECMPL: apb4.prdata = s_mtimecmp_q[31:0];
-        `CLINT_MTIMECMPH: apb4.prdata = s_mtimecmp_q[63:32];
-        default:          apb4.prdata = '0;
+        `CLINT_MSIP:      apb4_prdata[`CLINT_MSIP_WIDTH-1:0] = s_msip_q;
+        `CLINT_MTIMEL:    apb4_prdata = s_mtime_q[31:0];
+        `CLINT_MTIMEH:    apb4_prdata = s_mtime_q[63:32];
+        `CLINT_MTIMECMPL: apb4_prdata = s_mtimecmp_q[31:0];
+        `CLINT_MTIMECMPH: apb4_prdata = s_mtimecmp_q[63:32];
+        default:          apb4_prdata = '0;
       endcase
     end
   end

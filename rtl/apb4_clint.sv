@@ -14,7 +14,6 @@
 module apb4_clint (
 `ifdef __VERILOG__
     `apb4_slave_if(apb4),
-    input  clint_rtc_clk_i,
     output clint_tmr_irq_o,
     output clint_sfr_irq_o
 `else
@@ -25,7 +24,6 @@ module apb4_clint (
 
 `ifndef __VERILOG__
   `apb4_slave_if2wire(apb4, apb4);
-  logic clint_rtc_clk_i = clint.rtc_clk_i;
   logic clint_tmr_irq_o;
   logic clint_sfr_irq_o;
   assign clint.tmr_irq_o = clint_tmr_irq_o;
@@ -40,20 +38,12 @@ module apb4_clint (
   logic s_mtime_en;
   logic [`CLINT_MTIMECMP_WIDTH-1:0] s_mtimecmp_d, s_mtimecmp_q;
   logic s_mtimecmp_en;
-  logic s_rtc_rise_edge;
 
   assign s_apb4_addr     = apb4_paddr[5:2];
   assign s_apb4_wr_hdshk = (apb4_psel && apb4_penable) && apb4_pwrite;
   assign s_apb4_rd_hdshk = (apb4_psel && apb4_penable) && (~apb4_pwrite);
   assign apb4_pready     = 1'b1;
   assign apb4_pslverr    = 1'b0;
-
-  edge_det_re #(2, 1) u_edge_det_re (
-      .clk_i  (apb4_pclk),
-      .rst_n_i(apb4_presetn),
-      .dat_i  (clint_rtc_clk_i),
-      .re_o   (s_rtc_rise_edge)
-  );
 
   assign s_msip_en = s_apb4_wr_hdshk && s_apb4_addr == `CLINT_MSIP;
   assign s_msip_d  = apb4_pwdata[`CLINT_MSIP_WIDTH-1:0];
@@ -65,7 +55,7 @@ module apb4_clint (
       s_msip_q
   );
 
-  assign s_mtime_en = s_rtc_rise_edge;
+  assign s_mtime_en = 1'b1;
   assign s_mtime_d  = s_mtime_q + 1'b1;
   dffer #(`CLINT_MTIME_WIDTH) u_mtime_dffer (
       apb4_pclk,

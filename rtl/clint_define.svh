@@ -61,8 +61,8 @@ interface clint_if(input logic rtc_clk_i);
     logic  tmr_irq_o;
     logic  sfr_irq_o;
     
-    modport dut(input rtc_clk_i, output tmr_irq_o, output sfr_irq_o);
-    modport tb(input rtc_clk_i, input tmr_irq_o, input sfr_irq_o);
+    modport dut(output tmr_irq_o, output sfr_irq_o);
+    modport tb(input tmr_irq_o, input sfr_irq_o);
 endinterface
 // verilog_format: on
 `endif

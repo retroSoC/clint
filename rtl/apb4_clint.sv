@@ -30,7 +30,7 @@ module apb4_clint (
   assign clint.sfr_irq_o = clint_sfr_irq_o;
 `endif
 
-  logic [3:0] s_apb4_addr;
+  logic [13:0] s_apb4_addr;
   logic s_apb4_wr_hdshk, s_apb4_rd_hdshk;
   logic [`CLINT_MSIP_WIDTH-1:0] s_msip_d, s_msip_q;
   logic s_msip_en;
@@ -39,7 +39,7 @@ module apb4_clint (
   logic [`CLINT_MTIMECMP_WIDTH-1:0] s_mtimecmp_d, s_mtimecmp_q;
   logic s_mtimecmp_en;
 
-  assign s_apb4_addr     = apb4_paddr[5:2];
+  assign s_apb4_addr     = apb4_paddr[15:2];
   assign s_apb4_wr_hdshk = (apb4_psel && apb4_penable) && apb4_pwrite;
   assign s_apb4_rd_hdshk = (apb4_psel && apb4_penable) && (~apb4_pwrite);
   assign apb4_pready     = 1'b1;

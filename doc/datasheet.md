@@ -22,10 +22,10 @@ The `clint(core-local interruptor)` IP is a fully parameterised soft IP implemen
 | name | offset  | length | description |
 |:----:|:-------:|:-----: | :---------: |
 | [MSIP](#machine-mode-software-interrupt) | 0x0 | 4 | machine mode software interrupt |
-| [MTIMEL](#machine-timer-low) | 0x4 | 4 | machine timer low |
-| [MTIMEH](#machine-timer-high) | 0x8 | 4 | machine timer high |
-| [MTIMECMPL](#machine-timer-compare-low) | 0xC | 4 | machine timer compare low |
-| [MTIMECMPH](#machine-timer-compare-high) | 0x10 | 4 | machine timer compare high |
+| [MTIMECMPL](#machine-timer-compare-low) | 0x4000 | 4 | machine timer compare low |
+| [MTIMECMPH](#machine-timer-compare-high) | 0x4004 | 4 | machine timer compare high |
+| [MTIMEL](#machine-timer-low) | 0xbff8 | 4 | machine timer low |
+| [MTIMEH](#machine-timer-high) | 0xbffc | 4 | machine timer high |
 
 #### Machine Mode Software Interrupt
 | bit | access  | description |

@@ -4,19 +4,22 @@
 
 #define CLINT_BASE_ADDR     0x10004000
 #define CLINT_REG_MSIP      *((volatile uint32_t *)(CLINT_BASE_ADDR))
-#define CLINT_REG_MTIMEL    *((volatile uint32_t *)(CLINT_BASE_ADDR + 4))
-#define CLINT_REG_MTIMEH    *((volatile uint32_t *)(CLINT_BASE_ADDR + 8))
-#define CLINT_REG_MTIMECMPL *((volatile uint32_t *)(CLINT_BASE_ADDR + 12))
-#define CLINT_REG_MTIMECMPH *((volatile uint32_t *)(CLINT_BASE_ADDR + 16))
+#define CLINT_REG_MTIMECMPL *((volatile uint32_t *)(CLINT_BASE_ADDR + 0x4000))
+#define CLINT_REG_MTIMECMPH *((volatile uint32_t *)(CLINT_BASE_ADDR + 0x4004))
+#define CLINT_REG_MTIMEL    *((volatile uint32_t *)(CLINT_BASE_ADDR + 0xbff8))
+#define CLINT_REG_MTIMEH    *((volatile uint32_t *)(CLINT_BASE_ADDR + 0xbffc))
 
 int main(){
+    uint64_t mtime = 0;
     putstr("clint test\n");
     for(int i = 0; i < 6; i++) {
-        printf("i: %d, mtime: %llx\n", i, (((uint64_t) CLINT_REG_MTIMEH) << 32) | CLINT_REG_MTIMEL);
+        mtime = (((uint64_t) CLINT_REG_MTIMEH) << 32) | CLINT_REG_MTIMEL;
+        printf("i: %d, mtime: %llx\n", i, mtime);
     }
 
-    CLINT_REG_MTIMECMPH = 0;
-    CLINT_REG_MTIMECMPL = (uint32_t) 0x1FFFF;
+    mtime += 0x20000;
+    CLINT_REG_MTIMECMPH = (mtime >> 32) & 0xffffffffu;
+    CLINT_REG_MTIMECMPL = mtime & 0xffffffffu;
     printf("mtimecmp: %llx\n", (((uint64_t) CLINT_REG_MTIMECMPH) << 32) | CLINT_REG_MTIMECMPL);
 
     for(int i = 0; i < 6; i++) {
